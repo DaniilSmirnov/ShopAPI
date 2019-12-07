@@ -4,6 +4,7 @@ from flask import request
 import mysql.connector
 from flask_cors import CORS
 import json
+from hashlib import sha256
 
 app = Flask(__name__)
 
@@ -12,58 +13,16 @@ app.config['CORS_HEADERS'] = 'Access-Control-Allow-Origin: *'
 cors = CORS(app)
 api = Api(app)
 
+def get_cnx():
+    cnx = mysql.connector.connect(user='root', password='',
+                                  host='0.0.0.0',
+                                  database='')
+    return cnx
+
 
 class TestConnection(Resource):
     def get(self):
         return {'status': 'success'}
-
-
-class AddMeet(Resource):
-    def post(self):
-
-        parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str)
-        parser.add_argument('description', type=str)
-        parser.add_argument('owner_id', type=int)
-        parser.add_argument('sig', type=int)
-        parser.add_argument('start', type=str)
-        parser.add_argument('finish', type=str)
-        parser.add_argument('photo', type=str)
-        args = parser.parse_args()
-
-        _name = args['name']
-        _signature = args['sig']
-        _description = args['description']
-        _owner_id = args['owner_id']
-        _start = args['start']
-        _finish = args['finish']
-        _photo = args['photo']
-
-        try:
-            cnx = mysql.connector.connect(user='root', password='misha_benich228',
-                                          host='0.0.0.0',
-                                          database='meets')
-
-            cursor = cnx.cursor(buffered=True)
-            query = "select sig from members where idmembers = %s and sig = %s"
-            data = (_owner_id, _signature,)
-            cursor.execute(query, data)
-
-            for item in cursor:
-                for value in item:
-                    if str(value) == str(_signature):
-                        query = "insert into meetings values (default, %s, %s, %s, default, %s, %s, default, %s)"
-                        data = (_name, _description, _owner_id, _start, _finish, _photo)
-                        cursor.execute(query, data)
-                        cnx.commit()
-                        return {'success': True}
-                    else:
-                        return {'failed': '403'}
-
-            return {'success': True}
-
-        except BaseException as e:
-            return {'error' : str(e)}
 
 
 class Basket(Resource):
@@ -74,9 +33,7 @@ class Basket(Resource):
         args = parser.parse_args()
         _id = args['id']
 
-        cnx = mysql.connector.connect(user='root', password='',
-                                      host='0.0.0.0',
-                                      database='')
+        cnx = get_cnx()
 
         cursor = cnx.cursor(buffered=True)
 
@@ -115,9 +72,7 @@ class Basket(Resource):
         _product_id = args['product_id']
         _kolvo = args['kolvo']
 
-        cnx = mysql.connector.connect(user='root', password='',
-                                      host='0.0.0.0',
-                                      database='')
+        cnx = get_cnx()
 
         cursor = cnx.cursor(buffered=True)
 
@@ -141,9 +96,7 @@ class Basket(Resource):
         _id = args['id']
 
 
-        cnx = mysql.connector.connect(user='root', password='',
-                                      host='0.0.0.0',
-                                      database='')
+        cnx = get_cnx()
 
         cursor = cnx.cursor(buffered=True)
 
@@ -164,9 +117,7 @@ class Basket(Resource):
 class GetСatalog(Resource):
     def get(self):
         try:
-            cnx = mysql.connector.connect(user='root', password='',
-                                          host='0.0.0.0',
-                                          database='')
+            cnx = get_cnx()
 
             cursor = cnx.cursor(buffered=True)
             query = "select id_product, category_id, image, name_product from product;"
@@ -198,32 +149,66 @@ class UserGet(Resource):
         parser.add_argument('hash', type=str)
 
         args = parser.parse_args()
-        _id = args['id']
+        _hash = args['hash']
 
-        cnx = mysql.connector.connect(user='root', password='',
-                                      host='0.0.0.0',
-                                      database='')
+        cnx = get_cnx()
 
         cursor = cnx.cursor(buffered=True)
-        
+
+        query = 'select login, pass where hash = %s;'
+        data = (_hash, )
+        cursor.execute(query, data)
+        i = 0
+        for item in cursor:
+            for value in item:
+                if i == 0:
+                    log = value
+                if i == 1:
+                    password = value
+                i += 1
+
+        hash = str(log) + str(password)
+        hash = sha256(hash).hexdigest()
+        if hash == _hash:
+            return {'success': 'true'}
+
 
     def post(self):
         parser = reqparse.RequestParser()
+        parser.add_argument('login', type=str)
+        parser.add_argument('password', type=str)
+        parser.add_argument('group', type=str)
+        parser.add_argument('date', type=str)
+        parser.add_argument('name', type=str)
+        parser.add_argument('surname', type=str)
         parser.add_argument('hash', type=str)
 
         args = parser.parse_args()
-        _id = args['id']
+        _login = args['login']
+        _password = args['password']
+        _group = args['_group']
+        _date = args['date']
+        _name = args['name']
+        _surname = args['surname']
+        _hash = args['hash']
 
-        cnx = mysql.connector.connect(user='root', password='',
-                                      host='0.0.0.0',
-                                      database='')
+
+        cnx = get_cnx()
 
         cursor = cnx.cursor(buffered=True)
-        
-# TODO: регистрация, авторизация, корзина(удаление)
+
+        query = "insert into client values (default, %s, %s, %s, %s, %s, %s, %s)"
+        data = (_password, _group, _login, _name, _surname, _date, _hash)
+        cursor.execute(query, data)
+
+        return {'success': 'true'}
 
 
 api.add_resource(TestConnection, '/TestConnection')
+api.add_resource(Basket, '/Basket')
+api.add_resource(GetСatalog, '/GetCatalog')
+api.add_resource(UserGet, '/UserGet')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port='8000')
