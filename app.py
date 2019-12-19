@@ -97,7 +97,7 @@ class Basket(Resource):
 
 
         query = "delete from structure where id_order = %s;"
-        data = (_id)
+        data = (_id, )
         cursor.execute(query, data)
         cnx.commit()
         return {'success': True}
