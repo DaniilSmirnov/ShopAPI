@@ -77,18 +77,12 @@ class Basket(Resource):
 
         cursor = cnx.cursor()
 
-        query = "select orderr.id_orderr from orderr where client_id = %s and status = 'basket'"
-        data = (_id, )
+
+        query = "insert into structure values (%s, %s, %s)"
+        data = (_kolvo, _product_id, _id)
+
         cursor.execute(query, data)
-        for item in cursor:
-            for value in item:
-                id_order = value
-
-                query = "insert into structure values (%s, %s, %s)"
-                data = (_product_id, id_order, _kolvo)
-
-                cursor.execute(query, data)
-                cnx.commit()
+        cnx.commit()
         return {'success': True}
 
     def delete(self):
