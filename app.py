@@ -77,7 +77,6 @@ class Basket(Resource):
 
         cursor = cnx.cursor()
 
-
         query = "insert into structure values (%s, %s, %s)"
         data = (_kolvo, _product_id, _id)
 
@@ -96,17 +95,12 @@ class Basket(Resource):
 
         cursor = cnx.cursor()
 
-        query = "select orderr.id_orderr from orderr where client_id = %s and status = 'basket'"
-        data = (_id, )
+
+        query = "delete from structure where id_order = %s;"
+        data = (_id)
         cursor.execute(query, data)
-        for item in cursor:
-            for value in item:
-                id_order = value
-                query = "delete from structure where id_order = %s;"
-                data = (id_order)
-                cursor.execute(query, data)
-                cnx.commit()
-                return {'success': True}
+        cnx.commit()
+        return {'success': True}
 
 
 class GetCatalog(Resource):
