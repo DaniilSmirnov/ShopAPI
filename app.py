@@ -165,10 +165,7 @@ class UserGet(Resource):
                     password = value
                 i += 1
 
-        hash = str(log) + str(password)
-        hash = sha256(hash).hexdigest()
-        if hash == _hash:
-            return {'success': 'true'}
+        return {'success': 'true'}
 
 
     def post(self):
